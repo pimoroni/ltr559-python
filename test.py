@@ -68,12 +68,12 @@ l.ALS_THRESHOLD.set_upper(0xFFFF, False)
 l.ALS_THRESHOLD.write()
 
 print("Setting PS threshold")
-l.PS_THRESHOLD.set_lower(0x000, False)
-l.PS_THRESHOLD.set_upper(0xFF7, False)
+l.PS_THRESHOLD.set_lower(0,    False)
+l.PS_THRESHOLD.set_upper(500, False)
 l.PS_THRESHOLD.write()
 
 print("Setting integration time and repeat rate")
-l.PS_MEAS_RATE.set_rate_ms(100)
+l.PS_MEAS_RATE.set_rate_ms(200)
 l.ALS_MEAS_RATE.set_integration_time_ms(50)
 l.ALS_MEAS_RATE.set_repeat_rate_ms(100)
 
@@ -83,10 +83,21 @@ Activating sensor
 
 l.INTERRUPT.set_mode('als+ps')
 l.PS_CONTROL.set_active(True)
+l.PS_CONTROL.set_saturation_indicator_enable(1)
+
+l.PS_LED.set_current_ma(50, False)
+l.PS_LED.set_duty_cycle(1.0, False)
+l.PS_LED.set_pulse_freq_khz(30, False)
+l.PS_LED.write()
+
+l.PS_N_PULSES.set_count(1)
+
 l.ALS_CONTROL.set_mode(1)
 assert l.PS_CONTROL.get_active() == True
-assert l.PS_CONTROL.get_value() == 0b11
+assert l.PS_CONTROL.get_value() == 0b00100011
 print(l.PS_CONTROL)
+
+l.PS_OFFSET.set_offset(69)
 
 als0 = 0
 als1 = 0
@@ -99,13 +110,17 @@ try:
         als_int = l.ALS_PS_STATUS.get_als_interrupt(False) or l.ALS_PS_STATUS.get_als_data(False)
         print("ALS_PS_STATUS: {}".format(l.ALS_PS_STATUS))
 
+        if ps_int:
+            ps0 = l.PS_DATA.get_ch0()
+
         if als_int:
             l.ALS_DATA.read()
             als0 = l.ALS_DATA.get_ch0(False)
             als1 = l.ALS_DATA.get_ch1(False)
 
-        if ps_int:
-            ps0 = l.PS_DATA.get_ch0()
+        # Status should be 0 in bits 0 and 2 after reads have completed
+        l.ALS_PS_STATUS.read()
+        print("ALS_PS_STATUS: {}".format(l.ALS_PS_STATUS))
 
         print("ALS0: {} ALS1: {} PS0: {}  A: {} P: {}".format(als0, als1, ps0, als_int, ps_int))
         time.sleep(0.1)

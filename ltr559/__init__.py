@@ -2,6 +2,25 @@ from .device import _mask_width, _byte_swap, _leading_zeros, _trailing_zeros, _u
 
 ltr559 = Device(0x23, bitwidth=8)
 
+"""
+Convert the 16-bit output into the correct format for reading:
+
+    0bLLLLLLLLXXXXHHHH -> 0bHHHHLLLLLLLL
+"""
+def map_12bit_out(value):
+        return ((value & 0xFF00) >> 8) | ((value & 0x000F) << 8)
+
+"""
+Convert the 12-bit input into the correct format for the registers,
+the low byte followed by 4 empty bits and the high nibble:
+
+    0bHHHHLLLLLLLL -> 0bLLLLLLLLXXXXHHHH
+"""
+def map_12bit_in(value):
+        return ((value & 0xFF) << 8) | ((value & 0xF00) >> 8)
+
+
+
 ALS_CONTROL = Register(ltr559, 0x80, fields=(
     BitField('gain', 0b00011100, values_map={1: 0b000, 2: 0b001, 4: 0b011, 8:0b011, 48:0b110, 96:0b111}),
     BitField('sw_reset', 0b00000010),
@@ -57,8 +76,13 @@ ALS_PS_STATUS = Register(ltr559, 0x8C, fields=(
     BitField('ps_data', 0b00000001) # True = New data available
 ), read_only=True)
 
-PS_DATA = Register(ltr559, 0x0D, fields=(
-    BitField('ch0', 0xFFFF),
+"""
+The PS data is actually an 11bit value but since B3 is reserved it'll (probably) read as 0
+We could mask the result if necessary
+"""
+PS_DATA = Register(ltr559, 0x8D, fields=(
+    BitField('ch0', 0xFF0F, values_in=map_12bit_in, values_out=map_12bit_out),
+    BitField('saturation', 0x0080)
 ), bitwidth=16, read_only=True)
 
 """
@@ -69,27 +93,9 @@ INTERRUPT = Register(ltr559, 0x8F, fields=(
     BitField('mode', 0b00000011, values_map={'off': 0b00, 'ps': 0b01, 'als': 0b10, 'als+ps': 0b11})
 ))
 
-
-"""
-Convert the 16-bit output into the correct format for reading:
-
-    0bLLLLLLLLXXXXHHHH -> 0bHHHHLLLLLLLL
-"""
-def map_threshold_out(value):
-        return ((value & 0xFF00) >> 8) | ((value & 0x000F) << 8)
-
-"""
-Convert the 12-bit input into the correct format for the registers,
-the low byte followed by 4 empty bits and the high nibble:
-
-    0bHHHHLLLLLLLL -> 0bLLLLLLLLXXXXHHHH
-"""
-def map_threshold_in(value):
-        return ((value & 0xFF) << 8) | ((value & 0xF00) >> 8)
-
 PS_THRESHOLD = Register(ltr559, 0x90, fields=(
-    BitField('upper', 0xFF0F0000, values_in=map_threshold_in, values_out=map_threshold_out),
-    BitField('lower', 0x0000FF0F, values_in=map_threshold_in, values_out=map_threshold_out)
+    BitField('upper', 0xFF0F0000, values_in=map_12bit_in, values_out=map_12bit_out),
+    BitField('lower', 0x0000FF0F, values_in=map_12bit_in, values_out=map_12bit_out)
 ), bitwidth=32)
 
 
@@ -99,7 +105,7 @@ offsets caused by device variations, crosstalk and other environmental factors.
 """
 PS_OFFSET = Register(ltr559, 0x94, fields=(
     BitField('offset', 0x03FF), # Last two bits of 0x94, full 8 bits of 0x95
-))
+), bitwidth=16)
 
 
 """

@@ -63,7 +63,7 @@ class Device():
         values = _int_to_bytes(value, bitwidth // self._bitwidth, 'big')
         values = list(values)
         #values = [ord(x) for x in _int_to_bytes(value, bitwidth // self._bitwidth, 'big')]
-        #print(("Writing: " + ("{:02x}" * len(values)) + " to register: 0x{:02x}").format(*values, register))
+        #print(("Writing: 0x" + ("{:02x}" * len(values)) + " to register: 0x{:02x}").format(*values, register))
         bus.write_i2c_block_data(self._i2c_address, register, values)
 
     def read(self, register, bitwidth):
