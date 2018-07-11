@@ -73,9 +73,9 @@ l.PS_THRESHOLD.set_upper(500, False)
 l.PS_THRESHOLD.write()
 
 print("Setting integration time and repeat rate")
-l.PS_MEAS_RATE.set_rate_ms(200)
+l.PS_MEAS_RATE.set_rate_ms(100)
 l.ALS_MEAS_RATE.set_integration_time_ms(50)
-l.ALS_MEAS_RATE.set_repeat_rate_ms(100)
+l.ALS_MEAS_RATE.set_repeat_rate_ms(50)
 
 print("""
 Activating sensor
@@ -93,22 +93,24 @@ l.PS_LED.write()
 l.PS_N_PULSES.set_count(1)
 
 l.ALS_CONTROL.set_mode(1)
-assert l.PS_CONTROL.get_active() == True
-assert l.PS_CONTROL.get_value() == 0b00100011
-print(l.PS_CONTROL)
+l.ALS_CONTROL.set_gain(4)
 
 l.PS_OFFSET.set_offset(69)
 
 als0 = 0
 als1 = 0
 ps0 = 0
+lux = 0
+
+ch0_c = (17743, 42785, 5926, 0)
+ch1_c = (-11059, 19548, -1185, 0)
 
 try:
     while True:
         l.ALS_PS_STATUS.read()
         ps_int = l.ALS_PS_STATUS.get_ps_interrupt(False) or l.ALS_PS_STATUS.get_ps_data(False)
         als_int = l.ALS_PS_STATUS.get_als_interrupt(False) or l.ALS_PS_STATUS.get_als_data(False)
-        print("ALS_PS_STATUS: {}".format(l.ALS_PS_STATUS))
+        #print("ALS_PS_STATUS: {}".format(l.ALS_PS_STATUS))
 
         if ps_int:
             ps0 = l.PS_DATA.get_ch0()
@@ -117,12 +119,25 @@ try:
             l.ALS_DATA.read()
             als0 = l.ALS_DATA.get_ch0(False)
             als1 = l.ALS_DATA.get_ch1(False)
+            ratio = 1000
+            if als0 + als0 > 0:
+                ratio = (als0 * 1000) / (als1 + als0)
+    
+            ch_idx = 3
+            if ratio < 450:
+                ch_idx = 0
+            elif ratio < 640:
+                ch_idx = 1
+            elif ratio < 850:
+                ch_idx = 2
+            
+            lux = ((als0 * ch0_c[ch_idx]) - (als1 * ch1_c[ch_idx])) / 10000
 
         # Status should be 0 in bits 0 and 2 after reads have completed
-        l.ALS_PS_STATUS.read()
-        print("ALS_PS_STATUS: {}".format(l.ALS_PS_STATUS))
+        #l.ALS_PS_STATUS.read()
+        #print("ALS_PS_STATUS: {}".format(l.ALS_PS_STATUS))
 
-        print("ALS0: {} ALS1: {} PS0: {}  A: {} P: {}".format(als0, als1, ps0, als_int, ps_int))
-        time.sleep(0.1)
+        print("Lux: {:06.2f}, Light CH0: {:04d}, Light CH1: {:04d}, Proximity: {:04d}  New Data LP: 0b{:01d}{:01d}".format(lux, als0, als1, ps0, als_int, ps_int))
+        time.sleep(0.05)
 except KeyboardInterrupt:
     pass
