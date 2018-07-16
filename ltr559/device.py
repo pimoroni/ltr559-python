@@ -48,22 +48,48 @@ def _mask(value, mask, bitwidth=16):
             shift += 1
 
 def _int_to_bytes(value, length, endianness='big'):
-    return value.to_bytes(length, endianness)
+    try:
+        return value.to_bytes(length, endianness)
+    except:
+        output = bytearray()
+        for x in range(length):
+            offset = x * 8
+            mask = 0xff << offset
+            output.append((value & mask) >> offset)
+        if endianness == 'big':
+            output.reverse()
+        return output
 
 class Device():
     def __init__(self, i2c_address, i2c_dev=None, bitwidth=8):
         self._bitwidth = bitwidth
-        self._i2c_address = i2c_address
+
+        if type(i2c_address) is list:
+            self._i2c_addresses = i2c_address
+            self._i2c_address = i2c_address[0]
+        else:
+            self._i2c_addresses = [i2c_address]
+            self._i2c_address = i2c_address
+ 
         self._i2c = i2c_dev
         if self._i2c is None:
             import smbus
             self._i2c = smbus.SMBus(1)
 
+    def get_addresses(self):
+        return self._i2c_addresses
+
+    def select_address(self, address):
+        if address in self._i2c_addresses:
+            self._i2c_address = address
+            return True
+        raise ValueError("Address {:02x} invalid!".format(address))
+
     def write(self, register, value, bitwidth):
         values = _int_to_bytes(value, bitwidth // self._bitwidth, 'big')
         values = list(values)
         #values = [ord(x) for x in _int_to_bytes(value, bitwidth // self._bitwidth, 'big')]
-        #print(("Writing: 0x" + ("{:02x}" * len(values)) + " to register: 0x{:02x}").format(*values, register))
+        #print(("Writing: " + ("{:02x}" * len(values)) + " to register: 0x{:02x}").format(*values, register))
         bus.write_i2c_block_data(self._i2c_address, register, values)
 
     def read(self, register, bitwidth):
