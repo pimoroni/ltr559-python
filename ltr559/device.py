@@ -85,6 +85,13 @@ class Device():
             return True
         raise ValueError("Address {:02x} invalid!".format(address))
 
+    def next_address(self):
+        next_addr = self._i2c_addresses.index(self._i2c_address) + 1
+        next_addr += 1
+        next_addr %= len(self._i2c_addresses)
+        self._i2c_address = self._i2c_addresses[next_addr]
+        return self._i2c_address
+
     def write(self, register, value, bitwidth):
         values = _int_to_bytes(value, bitwidth // self._bitwidth, 'big')
         values = list(values)
@@ -106,11 +113,9 @@ class Register():
         self._address = address
         self._bitwidth = bitwidth
         self._fields = fields
-        self._value = 0
+        self._value = None
         self._read_only = read_only
         self._volatile = volatile
-
-        self.read()
 
         for field in self._fields:
             field._register = self
@@ -133,16 +138,18 @@ class Register():
         return "Register object with value: {}".format(self.__repr__())
 
     def read(self):
-        if self._value == 0 or self._volatile:
+        if self._value is None or self._volatile:
             self._value = self._device.read(self._address, self._bitwidth)
 
     def write(self):
         self._device.write(self._address, self._value, self._bitwidth)
 
     def set_bits(self, mask, value):
+        if self._value is None: self.read()
         self._value = (self._value & ~mask) | (value << _trailing_zeros(mask, self._bitwidth) & mask)
 
     def get_bits(self, mask):
+        if self._value is None: self.read()
         return (self._value & mask) >> _trailing_zeros(mask, self._bitwidth)
 
 class BitField():
