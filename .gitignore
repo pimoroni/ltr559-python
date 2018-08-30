@@ -15,4 +15,6 @@ __pycache__
 *.orig.*
 packaging/*tar.xz
 library/debian/
-library/blinkt
+.coverage
+.pytest_cache
+.tox
