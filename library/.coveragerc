@@ -1,4 +1,4 @@
 [run]
-source = i2cdevice
+source = ltr559
 omit =
     .tox/*
