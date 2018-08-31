@@ -26,7 +26,7 @@ Latest/development library from GitHub:
    :target: https://travis-ci.com/pimoroni/ltr559-python
 .. |Coverage Status| image:: https://coveralls.io/repos/github/pimoroni/ltr559-python/badge.svg?branch=master
    :target: https://coveralls.io/github/pimoroni/ltr559-python?branch=master
-.. |PyPi Package| image:: https://img.shields.io/pypi/v/i2cdevice.svg
+.. |PyPi Package| image:: https://img.shields.io/pypi/v/ltr559.svg
    :target: https://pypi.python.org/pypi/ltr559-python
-.. |Python Versions| image:: https://img.shields.io/pypi/pyversions/i2cdevice.svg
+.. |Python Versions| image:: https://img.shields.io/pypi/pyversions/ltr559.svg
    :target: https://pypi.python.org/pypi/ltr559-python
