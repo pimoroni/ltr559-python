@@ -1,0 +1,10 @@
+0.0.2
+-----
+
+* Added default light-sensor options
+* Fixed bugs & linted
+
+0.0.1
+-----
+
+* Initial Release
