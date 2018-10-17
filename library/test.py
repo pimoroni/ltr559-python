@@ -1,16 +1,16 @@
 import time
 import ltr559 as l
 
-assert l.PART_ID.get_part_number() == 0x09
-assert l.PART_ID.get_revision() == 0x02
+assert l._ltr559.PART_ID.get_part_number() == 0x09
+assert l._ltr559.PART_ID.get_revision() == 0x02
 
 print("""
 Found LTR-559.
 Part ID: 0x{:02x}
 Revision: 0x{:02x}
 """.format(
-    l.PART_ID.get_part_number(),
-    l.PART_ID.get_revision())
+    l._ltr559.PART_ID.get_part_number(),
+    l._ltr559.PART_ID.get_revision())
 )
 
 print("""

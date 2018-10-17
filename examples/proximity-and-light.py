@@ -1,17 +1,15 @@
-#!/bin/env python
+#!/usr/bin/env python
 
-from ltr559 import setup, update_sensor, get_lux, get_proximity
+import time
+import ltr559
 
-if __name__ == "__main__":
-    setup()
-    try:
-        while True:
-            update_sensor()
-            lux = get_lux()
-            prox = get_proximity()
+try:
+    while True:
+        lux = ltr559.get_lux()
+        prox = ltr559.get_proximity()
 
-            print("Lux: {:06.2f}, Proximity: {:04d}".format(lux, prox))
+        print("Lux: {:06.2f}, Proximity: {:04d}".format(lux, prox))
 
-            time.sleep(0.05)
-    except KeyboardInterrupt:
-        pass
+        time.sleep(0.05)
+except KeyboardInterrupt:
+    pass
