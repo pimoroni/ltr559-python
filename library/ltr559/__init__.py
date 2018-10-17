@@ -241,9 +241,23 @@ def setup():
         ALS_CONTROL.write()
 
     with _ltr559.PS_CONTROL as PS_CONTROL:
-        PS_CONTROL.set_active(1)
+        PS_CONTROL.set_active(True)
         PS_CONTROL.set_saturation_indicator_enable(1)
         PS_CONTROL.write()
+
+    _ltr559.PS_MEAS_RATE.set_rate_ms(100)
+    _ltr559.ALS_MEAS_RATE.set_integration_time_ms(50)
+    _ltr559.ALS_MEAS_RATE.set_repeat_rate_ms(50)
+
+    with _ltr559.ALS_THRESHOLD as ALS_THRESHOLD:
+        ALS_THRESHOLD.set_lower(0x0000)
+        ALS_THRESHOLD.set_upper(0xFFFF)
+        ALS_THRESHOLD.write()
+
+    with _ltr559.PS_THRESHOLD as PS_THRESHOLD:
+        PS_THRESHOLD.set_lower(0b0000)
+        PS_THRESHOLD.set_upper(0xFFFF)
+        PS_THRESHOLD.write()
 
     _ltr559.PS_OFFSET.set_offset(0)
 
