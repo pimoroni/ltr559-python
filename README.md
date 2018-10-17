@@ -5,7 +5,7 @@
 [![PyPi Package](https://img.shields.io/pypi/v/ltr559.svg)](https://pypi.python.org/pypi/ltr559-python)
 [![Python Versions](https://img.shields.io/pypi/pyversions/ltr559.svg)](https://pypi.python.org/pypi/ltr559-python)
 
-Suitable for detecting proximity of an object at close range the LTR559 is great for approach detection and ambient light compensation. The range is useful to around 2cm, and this is the type of sensor you might find in a smartphone to determine if you're holding it against your head.
+Suitable for detecting proximity of an object at close range the LTR-559 is great for approach detection and ambient light compensation. The range is useful to around 5cm, and this is the type of sensor you might find in a smartphone to determine if you're holding it against your head.
 
 # Installing
 
