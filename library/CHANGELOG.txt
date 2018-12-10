@@ -1,3 +1,8 @@
+0.0.3
+-----
+
+* Fix PyPi readme formatting
+
 0.0.2
 -----
 

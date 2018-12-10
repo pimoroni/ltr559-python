@@ -39,11 +39,11 @@ classifiers = ['Development Status :: 4 - Beta',
 
 setup(
     name='ltr559',
-    version='0.0.2',
+    version='0.0.3',
     author='Philip Howard',
     author_email='phil@pimoroni.com',
     description="""Python library for the LTR559 light and proximity""",
-    long_description=open('README.rst').read() + open('CHANGELOG.txt').read(),
+    long_description=open('README.rst').read() + '\n' + open('CHANGELOG.txt').read(),
     license='MIT',
     keywords='Raspberry Pi',
     url='http://www.pimoroni.com',
