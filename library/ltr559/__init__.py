@@ -219,7 +219,7 @@ def setup():
     try:
         while True:
             status = _ltr559.ALS_CONTROL.get_sw_reset()
-            print("Status: {}".format(status))
+            # print("Status: {}".format(status))
             if status == 0:
                 break
             time.sleep(0.05)
