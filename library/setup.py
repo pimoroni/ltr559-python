@@ -39,7 +39,7 @@ classifiers = ['Development Status :: 4 - Beta',
 
 setup(
     name='ltr559',
-    version='0.0.3',
+    version='0.0.4',
     author='Philip Howard',
     author_email='phil@pimoroni.com',
     description="""Python library for the LTR559 light and proximity""",
@@ -47,6 +47,7 @@ setup(
     license='MIT',
     keywords='Raspberry Pi',
     url='http://www.pimoroni.com',
+    project_urls={'GitHub': 'https://www.github.com/pimoroni/ltr559-python'},
     classifiers=classifiers,
     packages=['ltr559'],
     install_requires=['i2cdevice']
