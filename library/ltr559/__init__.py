@@ -42,7 +42,7 @@ _ltr559 = Device(I2C_ADDR, bit_width=8, registers=(
         BitField('gain', 0b00011100, adapter=LookupAdapter({
             1: 0b000,
             2: 0b001,
-            4: 0b011,
+            4: 0b010,
             8: 0b011,
             48: 0b110,
             96: 0b111})),
