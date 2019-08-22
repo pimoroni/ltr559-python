@@ -211,7 +211,7 @@ def get_revision():
 
 def setup():
     """Set up the LTR559 sensor"""
-    global _is_setup,_gain
+    global _is_setup, _gain
     if _is_setup:
         return
     _is_setup = True
@@ -438,50 +438,57 @@ def update_sensor():
             _als1 = ALS_DATA.get_ch1()
 
         _ratio = _als1 * 100 / (_als1 + _als0) if _als0 + _als1 > 0 else 101
+
         if _ratio < 45:
-           ch_idx = 0
+            ch_idx = 0
         elif _ratio < 64:
-           ch_idx = 1
+            ch_idx = 1
         elif _ratio < 85:
-           ch_idx = 2
+            ch_idx = 2
         else:
-           ch_idx = 3
-        _lux = ((_als0 * _ch0_c[ch_idx]) - (_als1 * _ch1_c[ch_idx])) / (_intt / 100) / _gain / 10000
+            ch_idx = 3
+
+        try:
+            _lux = ((_als0 * _ch0_c[ch_idx]) - (_als1 * _ch1_c[ch_idx])) / (_intt / 100.0) / _gain / 10000.0
+        except ZeroDivisionError:
+            _lux = 0
 
 
 def get_gain():
     """ Return gain used in lux calculation"""
     return _gain
 
+
 def get_intt():
     """ Return integration time used in lux calculation"""
     return _intt
 
+
 def get_raw_als(passive=True):
     """ reurtn raw ALS channel data ch0,ch1 """
     if not passive:
-       update_sensor()
+        update_sensor()
     return _als0, _als1
 
 
 def get_ratio(passive=True):
     """Return the ambient light ratio between ALS channels"""
     if not passive:
-       update_sensor()
+        update_sensor()
     return _ratio
 
 
 def get_lux(passive=False):
     """Return the ambient light value in lux"""
     if not passive:
-       update_sensor()
+        update_sensor()
     return _lux
 
 
 def get_proximity(passive=False):
     """Return the proximity"""
     if not passive:
-       update_sensor()
+        update_sensor()
     return _ps0
 
 
