@@ -205,7 +205,7 @@ def get_revision():
     return _ltr559.PART_ID.get_revision()
 
 
-def setup():
+def setup(enable_interrupts=False, interrupt_pin_polarity=1):
     """Set up the LTR559 sensor"""
     global _is_setup
     if _is_setup:
@@ -229,10 +229,11 @@ def setup():
     except KeyboardInterrupt:
         pass
 
-    with _ltr559.INTERRUPT as INTERRUPT:
-        INTERRUPT.set_mode('als+ps')
-        INTERRUPT.set_polarity(0)
-        INTERRUPT.write()
+    if enable_interrupts:
+        with _ltr559.INTERRUPT as INTERRUPT:
+            INTERRUPT.set_mode('als+ps')
+            INTERRUPT.set_polarity(interrupt_pin_polarity=interrupt_pin_polarity)
+            INTERRUPT.write()
 
     with _ltr559.PS_LED as PS_LED:
         PS_LED.set_current_ma(50)
