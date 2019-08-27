@@ -8,6 +8,8 @@ print("""proximity-interrupt.py - Watch the LTR559 interrupt pin and trigger a f
 
 This script enables the LTR559's interrupt pin and sets up RPi.GPIO to watch it for changes.
 
+Tap the LTR559 to trigger the interrupt.
+
 Press Ctrl+C to exit!
 
 """)

@@ -232,7 +232,7 @@ def setup(enable_interrupts=False, interrupt_pin_polarity=1):
     if enable_interrupts:
         with _ltr559.INTERRUPT as INTERRUPT:
             INTERRUPT.set_mode('als+ps')
-            INTERRUPT.set_polarity(interrupt_pin_polarity=interrupt_pin_polarity)
+            INTERRUPT.set_polarity(interrupt_pin_polarity)
             INTERRUPT.write()
 
     with _ltr559.PS_LED as PS_LED:
