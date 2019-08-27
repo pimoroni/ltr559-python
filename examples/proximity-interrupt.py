@@ -2,7 +2,6 @@
 import ltr559
 import signal
 import RPi.GPIO as GPIO
-import time
 
 print("""proximity-interrupt.py - Watch the LTR559 interrupt pin and trigger a function on change.
 
@@ -37,6 +36,7 @@ ltr559.set_proximity_threshold(0, 1000)
 # Tricky, since this value is *NOT* lux
 # ltr559.set_light_threshold(20, 0xffff)
 
+
 # This handler function is called by `add_event_detect` when a falling edge is detected on the INTERRUPT_PIN
 def interrupt_handler(pin):
     int_als, int_ps = ltr559.get_interrupt()
@@ -44,6 +44,7 @@ def interrupt_handler(pin):
         print("Proximity interrupt: {}".format(ltr559.get_proximity()))
     # if int_als:
     #    print("Light sensor interrupt: {}".format(ltr559.get_lux()))
+
 
 # Watch the INTERRUPT_PIN for a falling edge (HIGH/LOW transition)
 GPIO.add_event_detect(INTERRUPT_PIN, callback=interrupt_handler, edge=GPIO.FALLING)
