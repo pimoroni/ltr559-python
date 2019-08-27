@@ -23,18 +23,18 @@ _ch1_c = (-11059, 19548, -1185, 0)
 class Bit12Adapter(Adapter):
     def _encode(self, value):
         """
-        Convert the 16-bit output into the correct format for reading:
-
-            0bLLLLLLLLXXXXHHHH -> 0bHHHHLLLLLLLL
-        """
-        return ((value & 0xFF)) << 8 | ((value & 0xF00) >> 8)
-
-    def _decode(self, value):
-        """
         Convert the 12-bit input into the correct format for the registers,
         the low byte followed by 4 empty bits and the high nibble:
 
             0bHHHHLLLLLLLL -> 0bLLLLLLLLXXXXHHHH
+        """
+        return ((value & 0xFF) << 8) | ((value & 0xF00) >> 8)
+
+    def _decode(self, value):
+        """
+        Convert the 16-bit output into the correct format for reading:
+
+            0bLLLLLLLLXXXXHHHH -> 0bHHHHLLLLLLLL
         """
         return ((value & 0xFF00) >> 8) | ((value & 0x000F) << 8)
 
@@ -165,8 +165,8 @@ _ltr559 = Device(I2C_ADDR, bit_width=8, registers=(
     )),
 
     Register('PS_THRESHOLD', 0x90, fields=(
-        BitField('upper', 0xFF0F0000, adapter=Bit12Adapter(), bit_width=16),
-        BitField('lower', 0x0000FF0F, adapter=Bit12Adapter(), bit_width=16)
+        BitField('upper', 0xFF0F0000, adapter=Bit12Adapter()),
+        BitField('lower', 0x0000FF0F, adapter=Bit12Adapter())
     ), bit_width=32),
 
     # PS_OFFSET defines the measurement offset value to correct for proximity
@@ -209,7 +209,7 @@ def get_revision():
     return _ltr559.PART_ID.get_revision()
 
 
-def setup():
+def setup(enable_interrupts=False, interrupt_pin_polarity=1):
     """Set up the LTR559 sensor"""
     global _is_setup, _gain
     if _is_setup:
@@ -232,6 +232,12 @@ def setup():
             time.sleep(0.05)
     except KeyboardInterrupt:
         pass
+
+    if enable_interrupts:
+        with _ltr559.INTERRUPT as INTERRUPT:
+            INTERRUPT.set_mode('als+ps')
+            INTERRUPT.set_polarity(interrupt_pin_polarity)
+            INTERRUPT.write()
 
     # FIXME use datasheet defaults or document
     with _ltr559.PS_LED as PS_LED:
@@ -268,8 +274,6 @@ def setup():
 
     _ltr559.PS_OFFSET.set_offset(0)
 
-    _ltr559.INTERRUPT.set_mode('als+ps')
-
 
 def set_light_threshold(lower, upper):
     """Set light interrupt threshold
@@ -296,6 +300,7 @@ def set_proximity_threshold(lower, upper):
     with _ltr559.PS_THRESHOLD as PS_THRESHOLD:
         PS_THRESHOLD.set_lower(lower)
         PS_THRESHOLD.set_upper(upper)
+        PS_THRESHOLD.write()
 
 
 def set_proximity_rate_ms(rate_ms):
@@ -483,6 +488,15 @@ def get_lux(passive=False):
     if not passive:
         update_sensor()
     return _lux
+
+
+def get_interrupt():
+    """Return the light and proximity sensor interrupt status"""
+    setup()
+    with _ltr559.ALS_PS_STATUS as ALS_PS_STATUS:
+        ps_int = ALS_PS_STATUS.get_ps_interrupt()
+        als_int = ALS_PS_STATUS.get_als_interrupt()
+    return als_int, ps_int
 
 
 def get_proximity(passive=False):
