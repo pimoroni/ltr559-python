@@ -11,6 +11,10 @@ _als0 = 0
 _als1 = 0
 _ps0 = 0
 _lux = 0
+_gain = 4
+_ratio = 100
+# Non default
+_intt = 50
 
 _ch0_c = (17743, 42785, 5926, 0)
 _ch1_c = (-11059, 19548, -1185, 0)
@@ -40,7 +44,7 @@ _ltr559 = Device(I2C_ADDR, bit_width=8, registers=(
         BitField('gain', 0b00011100, adapter=LookupAdapter({
             1: 0b000,
             2: 0b001,
-            4: 0b011,
+            4: 0b010,
             8: 0b011,
             48: 0b110,
             96: 0b111})),
@@ -207,7 +211,7 @@ def get_revision():
 
 def setup(enable_interrupts=False, interrupt_pin_polarity=1):
     """Set up the LTR559 sensor"""
-    global _is_setup
+    global _is_setup, _gain
     if _is_setup:
         return
     _is_setup = True
@@ -221,11 +225,11 @@ def setup(enable_interrupts=False, interrupt_pin_polarity=1):
     try:
         while True:
             status = _ltr559.ALS_CONTROL.get_sw_reset()
-            # print("Status: {}".format(status))
             if status == 0:
                 break
+            else:
+                print("Status: {}".format(status))
             time.sleep(0.05)
-
     except KeyboardInterrupt:
         pass
 
@@ -235,6 +239,7 @@ def setup(enable_interrupts=False, interrupt_pin_polarity=1):
             INTERRUPT.set_polarity(interrupt_pin_polarity)
             INTERRUPT.write()
 
+    # FIXME use datasheet defaults or document
     with _ltr559.PS_LED as PS_LED:
         PS_LED.set_current_ma(50)
         PS_LED.set_duty_cycle(1.0)
@@ -245,7 +250,7 @@ def setup(enable_interrupts=False, interrupt_pin_polarity=1):
 
     with _ltr559.ALS_CONTROL as ALS_CONTROL:
         ALS_CONTROL.set_mode(1)
-        ALS_CONTROL.set_gain(4)
+        ALS_CONTROL.set_gain(_gain)
         ALS_CONTROL.write()
 
     with _ltr559.PS_CONTROL as PS_CONTROL:
@@ -254,7 +259,7 @@ def setup(enable_interrupts=False, interrupt_pin_polarity=1):
         PS_CONTROL.write()
 
     _ltr559.PS_MEAS_RATE.set_rate_ms(100)
-    _ltr559.ALS_MEAS_RATE.set_integration_time_ms(50)
+    _ltr559.ALS_MEAS_RATE.set_integration_time_ms(_intt)
     _ltr559.ALS_MEAS_RATE.set_repeat_rate_ms(50)
 
     with _ltr559.ALS_THRESHOLD as ALS_THRESHOLD:
@@ -309,16 +314,18 @@ def set_proximity_rate_ms(rate_ms):
 
 
 def set_light_integration_time_ms(time_ms):
+    global _intt
     """Set light integration time in milliseconds
 
     :param time_ms: Time in milliseconds- one of 50, 100, 150, 200, 300, 350, 400
 
     """
+    _intt = time_ms
     setup()
-    _ltr559.ALS_MEAS_RATE.set_integration_time_ms(time_ms)
+    _ltr559.ALS_MEAS_RATE.set_integration_time_ms(_intt)
 
 
-def set_light_repeat_rate_ms(rate_ms):
+def set_light_repeat_rate_ms(rate_ms=100):
     """Set light measurement repeat rate in milliseconds
 
     :param rate_ms: Rate in milliseconds- one of 50, 100, 200, 500, 1000 or 2000
@@ -397,6 +404,7 @@ def set_proximity_led(current_ma=50, duty_cycle=1.0, pulse_freq_khz=30, num_puls
 
 
 def set_light_options(active=True, gain=4):
+    global _gain
     """Set the mode and gain for the light sensor
 
     :param active: True for Active Mode, False for Stand-by Mode
@@ -409,17 +417,18 @@ def set_light_options(active=True, gain=4):
     48x = 0.02 to 1.3k lux
     96x = 0.01 to 600 lux
     """
+    _gain = gain
     setup()
     with _ltr559.ALS_CONTROL as ALS_CONTROL:
         ALS_CONTROL.set_mode(active)
-        ALS_CONTROL.set_gain(gain)
+        ALS_CONTROL.set_gain(_gain)
         ALS_CONTROL.write()
 
 
 def update_sensor():
     """Update the sensor lux and proximity values"""
     setup()
-    global _ps0, _als0, _als1, _lux
+    global _ps0, _als0, _als1, _lux, _gain, _ratio, _intt
 
     with _ltr559.ALS_PS_STATUS as ALS_PS_STATUS:
         ps_int = ALS_PS_STATUS.get_ps_interrupt() or ALS_PS_STATUS.get_ps_data()
@@ -433,26 +442,51 @@ def update_sensor():
             _als0 = ALS_DATA.get_ch0()
             _als1 = ALS_DATA.get_ch1()
 
-        ratio = 1000
+        _ratio = _als1 * 100 / (_als1 + _als0) if _als0 + _als1 > 0 else 101
 
-        if _als0 + _als1 > 0:
-            ratio = float(_als0 * 1000) / (_als1 + _als0)
-
-        ch_idx = 3
-
-        if ratio < 450:
+        if _ratio < 45:
             ch_idx = 0
-        elif ratio < 640:
+        elif _ratio < 64:
             ch_idx = 1
-        elif ratio < 850:
+        elif _ratio < 85:
             ch_idx = 2
+        else:
+            ch_idx = 3
 
-        _lux = ((_als0 * _ch0_c[ch_idx]) - (_als1 * _ch1_c[ch_idx])) / 10000.0
+        try:
+            _lux = ((_als0 * _ch0_c[ch_idx]) - (_als1 * _ch1_c[ch_idx])) / (_intt / 100.0) / _gain / 10000.0
+        except ZeroDivisionError:
+            _lux = 0
 
 
-def get_lux():
+def get_gain():
+    """ Return gain used in lux calculation"""
+    return _gain
+
+
+def get_intt():
+    """ Return integration time used in lux calculation"""
+    return _intt
+
+
+def get_raw_als(passive=True):
+    """ reurtn raw ALS channel data ch0,ch1 """
+    if not passive:
+        update_sensor()
+    return _als0, _als1
+
+
+def get_ratio(passive=True):
+    """Return the ambient light ratio between ALS channels"""
+    if not passive:
+        update_sensor()
+    return _ratio
+
+
+def get_lux(passive=False):
     """Return the ambient light value in lux"""
-    update_sensor()
+    if not passive:
+        update_sensor()
     return _lux
 
 
@@ -465,22 +499,24 @@ def get_interrupt():
     return als_int, ps_int
 
 
-def get_proximity():
+def get_proximity(passive=False):
     """Return the proximity"""
-    update_sensor()
+    if not passive:
+        update_sensor()
     return _ps0
 
 
 if __name__ == "__main__":
     setup()
+    import sys
+    delay = float(sys.argv[1]) if len(sys.argv) == 2 and sys.argv[1].isnumeric() else 0.05
     try:
         while True:
             update_sensor()
-            lux = get_lux()
-            prox = get_proximity()
+            lux = get_lux(passive=True)
+            prox = get_proximity(passive=True)
 
-            print("Lux: {:06.2f}, Proximity: {:04d}".format(lux, prox))
-
-            time.sleep(0.05)
+            print("Lux: {:07.2f}, Proximity: {:04d}".format(lux, prox))
+            time.sleep(delay)
     except KeyboardInterrupt:
         pass
