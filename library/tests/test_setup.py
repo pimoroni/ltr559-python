@@ -14,13 +14,14 @@ class SMBusFakeDevice(MockSMBus):
 
 def test_setup_not_present():
     sys.modules['smbus'] = mock.MagicMock()
-    from ltr559 import setup
+    from ltr559 import LTR559
     with pytest.raises(RuntimeError):
-        setup()
+        ltr559 = LTR559()
 
 
 def test_setup_mock_present():
     smbus = mock.Mock()
     smbus.SMBus = SMBusFakeDevice
-    from ltr559 import setup
-    setup()
+    from ltr559 import LTR559
+    ltr559 = LTR559()
+    del ltr559

@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import time
-import ltr559
+from ltr559 import LTR559
+
+ltr559 = LTR559()
 
 try:
     while True:

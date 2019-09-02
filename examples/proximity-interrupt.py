@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import ltr559
+from ltr559 import LTR559
 import signal
 import RPi.GPIO as GPIO
 
@@ -12,6 +12,7 @@ Tap the LTR559 to trigger the interrupt.
 Press Ctrl+C to exit!
 
 """)
+
 
 # Breakout garden uses BCM4 as a shared interrupt pin
 INTERRUPT_PIN = 4
@@ -26,9 +27,7 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(INTERRUPT_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # Enable interrupts and set the pin to active LOW mode
-# This *must* be called before any other method on LTR559,
-# otherwise `setup` will be called automatically for you.
-ltr559.setup(enable_interrupts=True, interrupt_pin_polarity=0)
+ltr559 = LTR559(enable_interrupts=True, interrupt_pin_polarity=0)
 
 # Set the threshold outside which an interrupt will be triggered
 ltr559.set_proximity_threshold(0, 1000)
