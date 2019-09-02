@@ -27,7 +27,7 @@ class Bit12Adapter(Adapter):
 
 
 class LTR559:
-    def __init__(self, enable_interrupts=False, interrupt_pin_polarity=1):
+    def __init__(self, i2c_dev=None, enable_interrupts=False, interrupt_pin_polarity=1):
         self._als0 = 0
         self._als1 = 0
         self._ps0 = 0
@@ -41,7 +41,7 @@ class LTR559:
         self._ch0_c = (17743, 42785, 5926, 0)
         self._ch1_c = (-11059, 19548, -1185, 0)
 
-        self._ltr559 = Device(I2C_ADDR, bit_width=8, registers=(
+        self._ltr559 = Device(I2C_ADDR, i2c_dev=i2c_dev, bit_width=8, registers=(
             Register('ALS_CONTROL', 0x80, fields=(
                 BitField('gain', 0b00011100, adapter=LookupAdapter({
                     1: 0b000,
