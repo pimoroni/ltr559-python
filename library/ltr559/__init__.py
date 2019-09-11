@@ -27,7 +27,7 @@ class Bit12Adapter(Adapter):
 
 
 class LTR559:
-    def __init__(self, i2c_dev=None, enable_interrupts=False, interrupt_pin_polarity=1):
+    def __init__(self, i2c_dev=None, enable_interrupts=False, interrupt_pin_polarity=1, timeout=5.0):
         self._als0 = 0
         self._als1 = 0
         self._ps0 = 0
@@ -205,16 +205,15 @@ class LTR559:
 
         self._ltr559.set('ALS_CONTROL', sw_reset=1)
 
-        try:
-            while True:
-                status = self._ltr559.get('ALS_CONTROL').sw_reset
-                if status == 0:
-                    break
-                else:
-                    print("Status: {}".format(status))
-                time.sleep(0.05)
-        except KeyboardInterrupt:
-            pass
+        t_start = time.time()
+        while time.time() - t_start < timeout:
+            status = self._ltr559.get('ALS_CONTROL').sw_reset
+            if status == 0:
+                break
+            time.sleep(0.05)
+
+        if self._ltr559.get('ALS_CONTROL').sw_reset:
+            raise RuntimeError("Timeout waiting for software reset.")
 
         if enable_interrupts:
             self._ltr559.set('INTERRUPT',
