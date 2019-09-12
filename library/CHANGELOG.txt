@@ -1,3 +1,9 @@
+0.1.0
+-----
+
+* Breaking API change to class for CircuitPython compatibility
+* Port to new i2cdevice set/get API
+
 0.0.4
 -----
 

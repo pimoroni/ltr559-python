@@ -12,15 +12,33 @@ class SMBusFakeDevice(MockSMBus):
         self.regs[0x87] = 0x05       # Fake manufacturer ID
 
 
+class SMBusFakeDeviceNoTimeout(SMBusFakeDevice):
+    def __init__(self, i2c_bus):
+        SMBusFakeDevice.__init__(self, i2c_bus)
+
+    def write_i2c_block_data(self, i2c_address, register, values):
+        if register == 0x80:          # ALS_CONTROL
+            values[0] &= ~0b00000010  # Mask out the soft reset bit
+        return SMBusFakeDevice.write_i2c_block_data(self, i2c_address, register, values)
+
+
 def test_setup_not_present():
     sys.modules['smbus'] = mock.MagicMock()
-    from ltr559 import setup
+    from ltr559 import LTR559
     with pytest.raises(RuntimeError):
-        setup()
+        ltr559 = LTR559()
+        del ltr559
 
 
 def test_setup_mock_present():
-    smbus = mock.Mock()
-    smbus.SMBus = SMBusFakeDevice
-    from ltr559 import setup
-    setup()
+    from ltr559 import LTR559
+    with pytest.raises(RuntimeError) as e:
+        ltr559 = LTR559(i2c_dev=SMBusFakeDevice(1), timeout=0.5)
+        del ltr559
+        assert "Timeout" in str(e.value)
+
+
+def test_setup_mock_notimeout():
+    from ltr559 import LTR559
+    ltr559 = LTR559(i2c_dev=SMBusFakeDeviceNoTimeout(1), timeout=0.5)
+    del ltr559
