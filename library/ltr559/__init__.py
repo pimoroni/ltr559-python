@@ -1,3 +1,4 @@
+"""Library for the LITE-ON LTR559 digital light and proximity sensor."""
 import time
 from i2cdevice import Device, Register, BitField
 from i2cdevice.adapter import Adapter, LookupAdapter, U16ByteSwapAdapter
@@ -5,6 +6,8 @@ from i2cdevice.adapter import Adapter, LookupAdapter, U16ByteSwapAdapter
 __version__ = '0.1.0'
 
 I2C_ADDR = 0x23
+PART_ID = 0x09
+REVISION_ID = 0x02
 
 
 class Bit12Adapter(Adapter):
@@ -28,14 +31,27 @@ class Bit12Adapter(Adapter):
 
 class LTR559:
     def __init__(self, i2c_dev=None, enable_interrupts=False, interrupt_pin_polarity=1, timeout=5.0):
+        """Initialise the LTR559.
+
+        This sets up the LTR559 and checks that the Part Number ID matches 0x09 and
+        that the Revision Number ID matches 0x02. If you come across an unsupported
+        revision you should raise an Issue at https://github.com/pimoroni/ltr559-python
+
+        Several known-good default values are picked during setup, and the interrupt
+        thresholds are reset to the full range so that interrupts will not fire unless
+        configured manually using `set_light_threshold` and `set_proximity_threshold`.
+
+        Interrupts are always enabled, since this must be done before the sensor is active.
+
+        """
         self._als0 = 0
         self._als1 = 0
         self._ps0 = 0
         self._lux = 0
-        self._gain = 4
         self._ratio = 100
 
         # Non default
+        self._gain = 4  # 4x gain = 0.25 to 16k lux
         self._integration_time = 50
 
         self._ch0_c = (17743, 42785, 5926, 0)
@@ -200,7 +216,7 @@ class LTR559:
 
         """Set up the LTR559 sensor"""
         self.part_id = self._ltr559.get('PART_ID')
-        if self.part_id.part_number != 0x09 or self.part_id.revision != 0x02:
+        if self.part_id.part_number != PART_ID or self.part_id.revision != REVISION_ID:
             raise RuntimeError("LTR559 not found")
 
         self._ltr559.set('ALS_CONTROL', sw_reset=1)
@@ -215,17 +231,22 @@ class LTR559:
         if self._ltr559.get('ALS_CONTROL').sw_reset:
             raise RuntimeError("Timeout waiting for software reset.")
 
+        # Interrupt register must be set before device is switched to active mode
+        # see datasheet page 12/40, note #2.
         if enable_interrupts:
             self._ltr559.set('INTERRUPT',
                              mode='als+ps',
                              polarity=interrupt_pin_polarity)
 
         # FIXME use datasheet defaults or document
+        # No need to run the proximity LED at 100mA, so we pick 50 instead.
+        # Tests suggest this works pretty well.
         self._ltr559.set('PS_LED',
                          current_ma=50,
                          duty_cycle=1.0,
                          pulse_freq_khz=30)
 
+        # 1 pulse is the default value
         self._ltr559.set('PS_N_PULSES', count=1)
 
         self._ltr559.set('ALS_CONTROL',
@@ -253,18 +274,39 @@ class LTR559:
         self._ltr559.set('PS_OFFSET', offset=0)
 
     def get_part_id(self):
-        """Get part number"""
+        """Get part number.
+
+        Returns the Part Number ID portion of the PART_ID register.
+
+        This should always equal 0x09,
+        differences may indicate a sensor incompatible with this library.
+
+        """
         return self.part_id.part_number
 
     def get_revision(self):
-        """Get revision ID"""
+        """Get revision ID.
+
+        Returns the Revision ID portion of the PART_ID register.
+
+        This library was tested against revision 0x02,
+        differences may indicate a sensor incompatible with this library.
+
+        """
         return self.part_id.revision
 
     def set_light_threshold(self, lower, upper):
-        """Set light interrupt threshold
+        """Set light interrupt threshold.
 
-        :param lower: Lower threshold
-        :param upper: Upper threshold
+        Set the upper and lower threshold for the light sensor interrupt.
+
+        An interrupt is triggered for readings *outside* of this range.
+
+        Since the light threshold is specified in raw counts and applies to
+        both ch0 and ch1 it's not possible to interrupt at a specific Lux value.
+
+        :param lower: Lower threshold in raw ADC counts
+        :param upper: Upper threshold in raw ADC counts
 
         """
         self._ltr559.set('ALS_THRESHOLD',
@@ -272,7 +314,11 @@ class LTR559:
                          upper=upper)
 
     def set_proximity_threshold(self, lower, upper):
-        """Set proximity interrupt threshold
+        """Set proximity interrupt threshold.
+
+        Set the upper and lower threshold for the proximity interrupt.
+
+        An interrupt is triggered for readings *outside* of this range.
 
         :param lower: Lower threshold
         :param upper: Upper threshold
@@ -283,7 +329,10 @@ class LTR559:
                          upper=upper)
 
     def set_proximity_rate_ms(self, rate_ms):
-        """Set proximity measurement repeat rate in milliseconds
+        """Set proximity measurement repeat rate in milliseconds.
+
+        This is the rate at which the proximity sensor is measured. For example:
+        A rate of 100ms would result in ten proximity measurements every second.
 
         :param rate_ms: Time in milliseconds- one of 10, 50, 70, 100, 200, 500, 1000 or 2000
 
@@ -291,7 +340,10 @@ class LTR559:
         self._ltr559.set('PS_MEAS_RATE', rate_ms)
 
     def set_light_integration_time_ms(self, time_ms):
-        """Set light integration time in milliseconds
+        """Set light integration time in milliseconds.
+
+        This is the measurement time for each individual light sensor measurement,
+        it must be equal to or less than the repeat rate.
 
         :param time_ms: Time in milliseconds- one of 50, 100, 150, 200, 300, 350, 400
 
@@ -300,7 +352,14 @@ class LTR559:
         self._ltr559.set('ALS_MEAS_RATE', integration_time_ms=time_ms)
 
     def set_light_repeat_rate_ms(self, rate_ms=100):
-        """Set light measurement repeat rate in milliseconds
+        """Set light measurement repeat rate in milliseconds.
+
+        This is the rate at which light measurements are repeated. For example:
+        A repeat rate of 1000ms would result in one light measurement every second.
+
+        The repeat rate must be equal to or larger than the integration time, if a lower
+        value is picked then it is automatically reset by the LTR559 to match the chosen
+        integration time.
 
         :param rate_ms: Rate in milliseconds- one of 50, 100, 200, 500, 1000 or 2000
 
@@ -349,7 +408,7 @@ class LTR559:
         return self._ltr559.set('PS_OFFSET', offset=offset)
 
     def set_proximity_led(self, current_ma=50, duty_cycle=1.0, pulse_freq_khz=30, num_pulses=1):
-        """Setup the proximity led current and properties
+        """Setup the proximity led current and properties.
 
         :param current_ma: LED current in milliamps- one of 5, 10, 20, 50 or 100
         :param duty_cycle: LED duty cucle- one of 0.25, 0.5, 0.75 or 1.0 (25%, 50%, 75% or 100%)
@@ -365,7 +424,9 @@ class LTR559:
         self._ltr559.set('PS_N_PULSES', num_pulses)
 
     def set_light_options(self, active=True, gain=4):
-        """Set the mode and gain for the light sensor
+        """Set the mode and gain for the light sensor.
+
+        By default the sensor is active with a gain of 4x (0.25 to 16k lux).
 
         :param active: True for Active Mode, False for Stand-by Mode
         :param gain: Light sensor gain x- one of 1, 2, 4, 8, 48 or 96
@@ -383,7 +444,21 @@ class LTR559:
                          gain=gain)
 
     def update_sensor(self):
-        """Update the sensor lux and proximity values"""
+        """Update the sensor lux and proximity values.
+
+        Will perform a read of the status register and determine if either an interrupt
+        has triggered or the new data flag for the light or proximity sensor is flipped.
+
+        If new data is present it will be calculated and stored for later retrieval.
+
+        Proximity data is stored in `self._ps0` and can be retrieved with `get_proximity`.
+
+        Light sensor data is stored in `self._lux` and can be retrieved with `get_lux`.
+
+        Raw light sensor data is also stored in `self._als0` and self._als1` which store
+        the ch0 and ch1 values respectively. These can be retrieved with `get_raw_als`.
+
+        """
         status = self._ltr559.get('ALS_PS_STATUS')
         ps_int = status.ps_interrupt or status.ps_data
         als_int = status.als_interrupt or status.als_data
@@ -416,40 +491,64 @@ class LTR559:
                 self._lux = 0
 
     def get_gain(self):
-        """ Return gain used in lux calculation"""
+        """Return gain used in lux calculation."""
         return self._gain
 
     def get_integration_time(self):
-        """ Return integration time used in lux calculation"""
+        """Return integration time used in lux calculation.
+
+        Integration time directly affects the raw ch0 and ch1 readings and is required
+        to correctly calculate a lux value.
+
+        """
         return self._integration_time
 
     get_intt = get_integration_time
 
     def get_raw_als(self, passive=True):
-        """ reurtn raw ALS channel data ch0,ch1 """
+        """Return raw ALS channel data ch0, ch1.
+
+        The two channels measure Visible + IR and just IR respectively.
+
+        """
         if not passive:
             self.update_sensor()
         return self._als0, self._als1
 
     def get_ratio(self, passive=True):
-        """Return the ambient light ratio between ALS channels"""
+        """Return the ambient light ratio between ALS channels.
+
+        Uses the IR-only channel to discount the portion of IR from the unfiltered channel.
+
+        """
         if not passive:
             self.update_sensor()
         return self._ratio
 
     def get_lux(self, passive=False):
-        """Return the ambient light value in lux"""
+        """Return the ambient light value in lux."""
         if not passive:
             self.update_sensor()
         return self._lux
 
     def get_interrupt(self):
-        """Return the light and proximity sensor interrupt status"""
+        """Return the light and proximity sensor interrupt status.
+
+        An interrupt is asserted when the light or proximity sensor reading is *outside*
+        the range set by the upper and lower thresholds.
+
+        """
         interrupt = self._ltr559.get('ALS_PS_STATUS')
         return interrupt.als_interrupt, interrupt.ps_interrupt
 
     def get_proximity(self, passive=False):
-        """Return the proximity"""
+        """Return the proximity.
+
+        Returns the raw proximity reading from the sensor.
+
+        A closer object produces a larger value.
+
+        """
         if not passive:
             self.update_sensor()
         return self._ps0
