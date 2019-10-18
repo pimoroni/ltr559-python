@@ -39,6 +39,8 @@ ltr559.set_proximity_threshold(0, 1000)
 # This handler function is called by `add_event_detect` when a falling edge is detected on the INTERRUPT_PIN
 def interrupt_handler(pin):
     int_als, int_ps = ltr559.get_interrupt()
+    if int_ps or int_als:
+        ltr559.update_sensor()
     if int_ps:
         print("Proximity interrupt: {}".format(ltr559.get_proximity()))
     # if int_als:

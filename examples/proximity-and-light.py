@@ -7,6 +7,7 @@ ltr559 = LTR559()
 
 try:
     while True:
+        ltr559.update_sensor()
         lux = ltr559.get_lux()
         prox = ltr559.get_proximity()
 
