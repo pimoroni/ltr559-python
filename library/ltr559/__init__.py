@@ -337,7 +337,7 @@ class LTR559:
         :param rate_ms: Time in milliseconds- one of 10, 50, 70, 100, 200, 500, 1000 or 2000
 
         """
-        self._ltr559.set('PS_MEAS_RATE', rate_ms)
+        self._ltr559.set('PS_MEAS_RATE', rate_ms=rate_ms)
 
     def set_light_integration_time_ms(self, time_ms):
         """Set light integration time in milliseconds.
@@ -364,7 +364,7 @@ class LTR559:
         :param rate_ms: Rate in milliseconds- one of 50, 100, 200, 500, 1000 or 2000
 
         """
-        self._ltr559.set('ALS_MEAS_RATE', set_repeat_rate_ms=rate_ms)
+        self._ltr559.set('ALS_MEAS_RATE', repeat_rate_ms=rate_ms)
 
     def set_interrupt_mode(self, enable_light=True, enable_proximity=True):
         """Set the intterupt mode
@@ -389,7 +389,7 @@ class LTR559:
         :param active: True for enabled, False for disabled
 
         """
-        self._ltr559.set('PS_CONTROL', set_active=active)
+        self._ltr559.set('PS_CONTROL', active=active)
 
     def set_proximity_saturation_indictator(self, enabled=True):
         """Enable/disable the proximity saturation indicator
