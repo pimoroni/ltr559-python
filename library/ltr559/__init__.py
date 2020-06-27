@@ -221,8 +221,8 @@ class LTR559:
 
         self._ltr559.set('ALS_CONTROL', sw_reset=1)
 
-        t_start = time.time()
-        while time.time() - t_start < timeout:
+        t_start = time.monotonic()
+        while time.monotonic() - t_start < timeout:
             status = self._ltr559.get('ALS_CONTROL').sw_reset
             if status == 0:
                 break
