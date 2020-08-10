@@ -51,7 +51,6 @@ class LTR559:
         self._ratio = 100
 
         # Non default
-        self._gain = 4  # 4x gain = 0.25 to 16k lux
         self._integration_time = 50
 
         self._ch0_c = (17743, 42785, 5926, 0)
@@ -251,7 +250,7 @@ class LTR559:
 
         self._ltr559.set('ALS_CONTROL',
                          mode=1,
-                         gain=self._gain)
+                         gain=4)
 
         self._ltr559.set('PS_CONTROL',
                          active=True,
@@ -438,7 +437,6 @@ class LTR559:
         48x = 0.02 to 1.3k lux
         96x = 0.01 to 600 lux
         """
-        self._gain = gain
         self._ltr559.set('ALS_CONTROL',
                          mode=active,
                          gain=gain)
@@ -485,14 +483,14 @@ class LTR559:
             try:
                 self._lux = (self._als0 * self._ch0_c[ch_idx]) - (self._als1 * self._ch1_c[ch_idx])
                 self._lux /= (self._integration_time / 100.0)
-                self._lux /= self._gain
+                self._lux /= status.als_gain
                 self._lux /= 10000.0
             except ZeroDivisionError:
                 self._lux = 0
 
     def get_gain(self):
         """Return gain used in lux calculation."""
-        return self._gain
+        return self._ltr559.get('ALS_CONTROL').gain
 
     def get_integration_time(self):
         """Return integration time used in lux calculation.
