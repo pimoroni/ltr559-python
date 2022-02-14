@@ -1,6 +1,6 @@
 # LTR559 Proximity/Presence/Light Sensor
 
-[![Build Status](https://travis-ci.com/pimoroni/ltr559-python.svg?branch=master)](https://travis-ci.com/pimoroni/ltr559-python)
+[![Build Status](https://shields.io/github/workflow/status/pimoroni/ltr559-python/Python%20Tests.svg)](https://github.com/pimoroni/ltr559-python/actions/workflows/test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/pimoroni/ltr559-python/badge.svg?branch=master)](https://coveralls.io/github/pimoroni/ltr559-python?branch=master)
 [![PyPi Package](https://img.shields.io/pypi/v/ltr559.svg)](https://pypi.python.org/pypi/ltr559-python)
 [![Python Versions](https://img.shields.io/pypi/pyversions/ltr559.svg)](https://pypi.python.org/pypi/ltr559-python)
@@ -11,11 +11,11 @@ Suitable for detecting proximity of an object at close range the LTR-559 is grea
 
 Stable library from PyPi:
 
-* Just run `sudo pip install ltr559`
+* Just run `python3 -m pip install ltr559`
 
 Latest/development library from GitHub:
 
 * `git clone https://github.com/pimoroni/ltr559-python`
 * `cd ltr559-python`
-* `sudo ./install.sh`
+* `sudo ./install.sh --unstable`
 
