@@ -1,4 +1,0 @@
-[run]
-source = ltr559
-omit =
-    .tox/*

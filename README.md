@@ -17,5 +17,5 @@ Latest/development library from GitHub:
 
 * `git clone https://github.com/pimoroni/ltr559-python`
 * `cd ltr559-python`
-* `sudo ./install.sh --unstable`
+* `./install.sh --unstable`
 
