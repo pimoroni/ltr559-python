@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-from ltr559 import LTR559
 import signal
+
 import RPi.GPIO as GPIO
+
+from ltr559 import LTR559
 
 print("""proximity-interrupt.py - Watch the LTR559 interrupt pin and trigger a function on change.
 

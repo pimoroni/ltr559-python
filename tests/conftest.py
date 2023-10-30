@@ -1,7 +1,7 @@
 import sys
+
 import mock
 import pytest
-
 from i2cdevice import MockSMBus
 
 

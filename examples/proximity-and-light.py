@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import time
+
 from ltr559 import LTR559
 
 ltr559 = LTR559()

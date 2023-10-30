@@ -1,6 +1,7 @@
 """Library for the LITE-ON LTR559 digital light and proximity sensor."""
 import time
-from i2cdevice import Device, Register, BitField
+
+from i2cdevice import BitField, Device, Register
 from i2cdevice.adapter import Adapter, LookupAdapter, U16ByteSwapAdapter
 
 __version__ = "0.1.1"
