@@ -1,9 +1,10 @@
 """Library for the LITE-ON LTR559 digital light and proximity sensor."""
 import time
-from i2cdevice import Device, Register, BitField
+
+from i2cdevice import BitField, Device, Register
 from i2cdevice.adapter import Adapter, LookupAdapter, U16ByteSwapAdapter
 
-__version__ = '0.1.1'
+__version__ = "1.0.0"
 
 I2C_ADDR = 0x23
 PART_ID = 0x09
@@ -367,7 +368,7 @@ class LTR559:
         self._ltr559.set('ALS_MEAS_RATE', repeat_rate_ms=rate_ms)
 
     def set_interrupt_mode(self, enable_light=True, enable_proximity=True):
-        """Set the intterupt mode
+        """Set the interrupt mode
 
         :param enable_light: Enable the light sensor interrupt
         :param enable_proximity: Enable the proximity sensor interrupt

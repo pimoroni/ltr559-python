@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+import gpiod
+from gpiod.line import Bias, Edge
+
 from ltr559 import LTR559
-import signal
-import RPi.GPIO as GPIO
 
 print("""proximity-interrupt.py - Watch the LTR559 interrupt pin and trigger a function on change.
 
@@ -14,17 +15,25 @@ Press Ctrl+C to exit!
 """)
 
 
+# /dev/gpiochip4 on a Raspberry Pi 5
+GPIOCHIP = "/dev/gpiochip4"
+
 # Breakout garden uses BCM4 as a shared interrupt pin
 INTERRUPT_PIN = 4
-
-# Tell RPi.GPIO we'll be working with BCM pin numbering
-GPIO.setmode(GPIO.BCM)
 
 # Below we're setting up the LTR559 INTERRUPT_PIN in active LOW mode
 # This means it should be pulled "UP", which keeps it HIGH via a weak resistor
 # and when the LTR559 asserts the interrupt pin it will pull i=t LOW giving
 # us a "falling edge" transition to watch for.
-GPIO.setup(INTERRUPT_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+request = gpiod.request_lines(
+    GPIOCHIP,
+    consumer="LTR559",
+    config={
+        INTERRUPT_PIN: gpiod.LineSettings(
+            edge_detection=Edge.FALLING, bias=Bias.PULL_UP
+        )
+    },
+)
 
 # Enable interrupts and set the pin to active LOW mode
 ltr559 = LTR559(enable_interrupts=True, interrupt_pin_polarity=0)
@@ -48,7 +57,7 @@ def interrupt_handler(pin):
 
 
 # Watch the INTERRUPT_PIN for a falling edge (HIGH/LOW transition)
-GPIO.add_event_detect(INTERRUPT_PIN, callback=interrupt_handler, edge=GPIO.FALLING)
-
-# Prevent out Python script from exiting abruptly
-signal.pause()
+while True:
+    for event in request.read_edge_events():
+        if event.line_offset == INTERRUPT_PIN:
+            interrupt_handler(event.line_offset)

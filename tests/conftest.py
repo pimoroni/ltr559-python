@@ -1,7 +1,7 @@
 import sys
+
 import mock
 import pytest
-
 from i2cdevice import MockSMBus
 
 
@@ -46,9 +46,9 @@ def smbus():
     """Mock smbus module."""
     smbus = mock.MagicMock()
     smbus.SMBus = _SMBusFakeDevice
-    sys.modules['smbus'] = smbus
+    sys.modules['smbus2'] = smbus
     yield smbus
-    del sys.modules['smbus']
+    del sys.modules['smbus2']
 
 
 @pytest.fixture(scope='function', autouse=False)
