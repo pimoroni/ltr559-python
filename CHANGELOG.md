@@ -1,3 +1,9 @@
+1.0.0
+-----
+
+* Repackage to latest boilerplate
+* Require i2cdevice>=1.0.0 (now using smbus2 instead of smbus)
+
 0.1.1
 -----
 

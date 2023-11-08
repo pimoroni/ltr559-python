@@ -4,7 +4,7 @@ import time
 from i2cdevice import BitField, Device, Register
 from i2cdevice.adapter import Adapter, LookupAdapter, U16ByteSwapAdapter
 
-__version__ = "0.1.1"
+__version__ = "1.0.0"
 
 I2C_ADDR = 0x23
 PART_ID = 0x09
