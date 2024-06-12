@@ -1,22 +1,24 @@
 #!/usr/bin/env python
 import gpiod
+import gpiodevice
 from gpiod.line import Bias, Edge
 
 from ltr559 import LTR559
 
 print("""proximity-interrupt.py - Watch the LTR559 interrupt pin and trigger a function on change.
 
-This script enables the LTR559's interrupt pin and sets up RPi.GPIO to watch it for changes.
+This script enables the LTR559's interrupt pin and sets up gpiod to watch it for changes.
 
 Tap the LTR559 to trigger the interrupt.
+
+You might need to: pip install gpiodevice
 
 Press Ctrl+C to exit!
 
 """)
 
 
-# /dev/gpiochip4 on a Raspberry Pi 5
-GPIOCHIP = "/dev/gpiochip4"
+chip = gpiodevice.find_chip_by_platform()
 
 # Breakout garden uses BCM4 as a shared interrupt pin
 INTERRUPT_PIN = 4
@@ -25,8 +27,7 @@ INTERRUPT_PIN = 4
 # This means it should be pulled "UP", which keeps it HIGH via a weak resistor
 # and when the LTR559 asserts the interrupt pin it will pull i=t LOW giving
 # us a "falling edge" transition to watch for.
-request = gpiod.request_lines(
-    GPIOCHIP,
+request = chip.request_lines(
     consumer="LTR559",
     config={
         INTERRUPT_PIN: gpiod.LineSettings(
