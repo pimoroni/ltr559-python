@@ -6,7 +6,7 @@ from ltr559 import LTR559
 
 print("""proximity-interrupt.py - Watch the LTR559 interrupt pin and trigger a function on change.
 
-This script enables the LTR559's interrupt pin and sets up RPi.GPIO to watch it for changes.
+This script enables the LTR559's interrupt pin and sets up gpiod to watch it for changes.
 
 Tap the LTR559 to trigger the interrupt.
 
